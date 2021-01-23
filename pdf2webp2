@@ -1,0 +1,49 @@
+#!/bin/bash
+# convert a pdf file into a webp
+# (at single- and double- resolution)
+#
+# this is a two-step process (pdf -> png -> webp)
+#
+# relies on: gs cwebp
+# 
+# USAGE:
+#
+# # default parameters
+# pdf2webp2 [filename.pdf]
+#
+# # non-default resolution and compressiong quality
+# dpi=75 webp_q=95 pdf2webp2 [filename.pdf]
+#
+
+FILENAME=$1
+EXT="${FILENAME##*.}"
+BASENAME="${FILENAME%%.pdf}"
+
+if [[ "$EXT" != "pdf" ]]; then
+  echo "input file must be *.pdf"
+  exit 1
+fi
+
+
+# get arguments from environment
+if [ -z ${dpi+x} ]; then
+    dpi=150
+fi
+if [ -z ${webp_q+x} ]; then
+    webp_q=95
+fi
+
+
+# perform conversion at single and double resolution
+for multiplier in 1 2
+do
+    resolution=$(($multiplier * $dpi))
+    gs -dNOPAUSE -dBATCH -q -sDEVICE=pngalpha \
+       -r${resolution}x${resolution} \
+       -sOutputFile=${BASENAME}@${multiplier}.png \
+       ${BASENAME}.pdf
+    cwebp -quiet -q ${webp_q} \
+	  -o ${BASENAME}@${multiplier}.webp \
+	  ${BASENAME}@${multiplier}.png
+done
+

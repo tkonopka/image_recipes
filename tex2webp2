@@ -1,0 +1,67 @@
+#!/bin/bash
+# convert a tex file (e.g. an equation) into webp
+# (at single- and double- resolution)
+#
+# relies on: pdflatex pdfcrop gs cwebp
+#
+# USAGE:
+#
+# # default parameters
+# tex2webp2 [filename.tex]
+#
+# # non-default resolution and compression quality
+# dpi=75 webp_q=95 tex2webp2 [filename.tex]
+#
+
+FILENAME=$1
+EXT="${FILENAME##*.}"
+BASENAME="${FILENAME%%.tex}"
+
+if [[ "${EXT}" != "tex" ]]; then
+  echo "input file must be *.tex"
+  exit 1
+fi
+
+
+# get arguments from environment
+if [ -z ${dpi+x} ]; then
+    dpi=150
+fi
+if [ -z ${webp_q+x} ]; then
+    webp_q=95
+fi
+
+
+# prepare a complete tex file
+DOCFILE="${BASENAME}-document.tex"
+echo "\\documentclass[preview]{standalone}\\begin{document}" > \
+     ${BASENAME}-prefix.tex
+echo "\\end{document}" > ${BASENAME}-suffix.tex
+cat ${BASENAME}-prefix.tex ${BASENAME}.tex ${BASENAME}-suffix.tex > ${DOCFILE}
+rm ${BASENAME}-prefix.tex ${BASENAME}-suffix.tex
+
+
+# compile the new tex document into a cropped pdf
+RAW="${BASENAME}-document.pdf"
+CROPPED="${BASENAME}-document-crop.pdf"
+pdflatex $DOCFILE 
+pdflatex $DOCFILE 
+pdfcrop $RAW
+mv $CROPPED ${BASENAME}.pdf
+rm $DOCFILE $RAW
+rm ${BASENAME}-document.aux ${BASENAME}-document.log
+
+
+# perform conversion at single and double resolution
+for multiplier in 1 2
+do
+    resolution=$(($multiplier * $dpi))
+    gs -dNOPAUSE -dBATCH -q -sDEVICE=pngalpha \
+       -r${resolution}x${resolution} \
+       -sOutputFile=${BASENAME}@${multiplier}.png \
+       ${BASENAME}.pdf
+    cwebp -quiet -q ${webp_q} \
+	  -o ${BASENAME}@${multiplier}.webp \
+	  ${BASENAME}@${multiplier}.png
+done
+
