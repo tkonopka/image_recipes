@@ -40,10 +40,10 @@ do
     resolution=$(($multiplier * $dpi))
     gs -dNOPAUSE -dBATCH -q -sDEVICE=pngalpha \
        -r${resolution}x${resolution} \
-       -sOutputFile=${BASENAME}@${multiplier}.png \
+       -sOutputFile=${BASENAME}@${multiplier}x.png \
        ${BASENAME}.pdf
     cwebp -quiet -q ${webp_q} \
-	  -o ${BASENAME}@${multiplier}.webp \
-	  ${BASENAME}@${multiplier}.png
+	  -o ${BASENAME}@${multiplier}x.webp \
+	  ${BASENAME}@${multiplier}x.png
 done
 
