@@ -1,0 +1,47 @@
+#!/bin/bash
+# convert a png file into a webp
+# (at single- and double- resolution)
+#
+# relies on: webp convert
+#
+# USAGE:
+#
+# # default parameters
+# png2png2 [filename.png]
+#
+#
+# non-default resolution and compressiong quality
+# webp_q=95 png2webp2 [filename.png]
+#
+
+
+FILENAME=$1
+EXT="${FILENAME##*.}"
+BASENAME="${FILENAME%%.png}"
+
+if [[ "${EXT}" != "png" ]]; then
+  echo "input file must be *.png"
+  exit 1
+fi
+
+
+# get arguments from environment
+if [ -z ${webp_q+x} ]; then
+    webp_q=95
+fi
+
+
+# perform conversion at double resolution
+cwebp -quiet -q ${webp_q} \
+      -o ${BASENAME}@2x.webp \
+       ${BASENAME}.png
+
+
+# perform conversion at single resolution
+convert -resize 50% ${BASENAME}.png ${BASENAME}@1x.png
+cwebp -quiet -q ${webp_q} \
+      -o ${BASENAME}@1x.webp \
+       ${BASENAME}@1x.png
+rm ${BASENAME}@1x.png
+
+
